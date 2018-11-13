@@ -10,13 +10,6 @@ defines {
    "_WINDOWS"
 }
 
-configuration "Debug"
-libdirs { "../../dependencies/fbxsdk-2019.0/lib/vs2015/x64/debug/" }
-
-configuration "Release"
-libdirs { "../../dependencies/fbxsdk-2019.0/lib/vs2015/x64/release/" }
-configuration {}
-
 includedirs
 {
    'src',
@@ -32,6 +25,7 @@ libdirs
 {
    "../../dependencies/libs",
    "../../dependencies/LuaJIT-2.0.0/src/",
+   "../../dependencies/fbxsdk-2019.0/lib/vs2015/x64/release/"
 }
 
 files

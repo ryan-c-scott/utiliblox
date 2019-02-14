@@ -35,34 +35,34 @@ bool _debuggingEnabled = false;
 // EASTL expects us to define these, see allocator.h line 194
 void* operator new[](size_t size, const char* pName, int flags,
                      unsigned debugFlags, const char* file, int line)
-{
-        return malloc( size );
-}
+                      {
+                          return malloc( size );
+                      }
 void* operator new[](size_t size, size_t alignment, size_t alignmentOffset,
                      const char* pName, int flags, unsigned debugFlags, const char* file, int line)
-{
-        return malloc( size );
-}
+                      {
+                          return malloc( size );
+                      }
 
 int Vsnprintf8(char8_t* pDestination, size_t n, const char8_t* pFormat, va_list arguments)
 {
-    #ifdef _MSC_VER
-        return _vsnprintf(pDestination, n, pFormat, arguments);
-    #else
-        return vsnprintf(pDestination, n, pFormat, arguments);
-    #endif
+#ifdef _MSC_VER
+    return _vsnprintf(pDestination, n, pFormat, arguments);
+#else
+    return vsnprintf(pDestination, n, pFormat, arguments);
+#endif
 }
 
 void printHelp()
 {
-        Log( "Usage:" );
-        Log( "\tmeshtool <script> [-p key value]... <file>..." );
-        Log( "" );
-        Log( "\tscript           asset file to be processed" );
-        Log( "\t-p, --param      key/value pair to be set in _PARAMS table for script" );
-        Log( "\tfile             file list to be put in _FILES table for script" );
-        Log( "" );
-        Log( "" );
+    Log( "Usage:" );
+    Log( "\tmeshtool <script> [-p key value]... <file>..." );
+    Log( "" );
+    Log( "\tscript           asset file to be processed" );
+    Log( "\t-p, --param      key/value pair to be set in _PARAMS table for script" );
+    Log( "\tfile             file list to be put in _FILES table for script" );
+    Log( "" );
+    Log( "" );
 }
 
 eastl::hash_map<eastl::string, FbxScene*> _openScenes;
@@ -351,9 +351,9 @@ static int _OutputLua( lua_State *L )
 
 static int LuaPanic( lua_State *L )
 {
-        const char *str = lua_tostring( L, -1 );
-        printf( "PANIC: %s", str );
-        return 0;
+    const char *str = lua_tostring( L, -1 );
+    printf( "PANIC: %s", str );
+    return 0;
 }
 
 lua_State* CreateLuaState()
@@ -364,7 +364,7 @@ lua_State* CreateLuaState()
     luaL_openlibs( L );
 
     luaopen_yajl( L );
-        lua_setglobal( L, "json" );
+    lua_setglobal( L, "json" );
 
     const luaL_reg registrations[] = {
         { "ProcessFile", _ProcessFile },
@@ -390,7 +390,7 @@ void SetupFbx()
         FBXSDK_printf( "Error: Unable to create FBX Manager!\n" );
         exit(1);
     }
-        else {
+    else {
         FBXSDK_printf( "Autodesk FBX SDK version %s\n", _importManager->GetVersion() );
     }
 }
@@ -404,42 +404,42 @@ void DestroyFbx()
 
 int main( int argc, char **argv )
 {
-        if( argc < 2 ) {
-                printHelp();
-                return 1;
-        }
+    if( argc < 2 ) {
+        printHelp();
+        return 1;
+    }
 
     lua_State *L = CreateLuaState();
 
     // FBX Setup
     SetupFbx();
         
-        //Create an IOSettings object. This object holds all import/export settings.
-        FbxIOSettings* ios = FbxIOSettings::Create( _importManager, IOSROOT );
-        _importManager->SetIOSettings( ios );
+    //Create an IOSettings object. This object holds all import/export settings.
+    FbxIOSettings* ios = FbxIOSettings::Create( _importManager, IOSROOT );
+    _importManager->SetIOSettings( ios );
 
-        // Load FBX plugins
-        FbxString lPath = FbxGetApplicationDirectory();
-        _importManager->LoadPluginsDirectory( lPath.Buffer() );
+    // Load FBX plugins
+    FbxString lPath = FbxGetApplicationDirectory();
+    _importManager->LoadPluginsDirectory( lPath.Buffer() );
     //////////////////////////
     
-        // =============================================================================================
-        // Parse arguments
-        // =============================================================================================
+    // =============================================================================================
+    // Parse arguments
+    // =============================================================================================
     eastl::vector< string > assetList;
     eastl::hash_map< eastl::string, eastl::string > paramList;
     string input, scriptPath;
     unsigned int stripLevel = 0;
-        bool geoOpt = true, overwriteMats = false;
+    bool geoOpt = true, overwriteMats = false;
     int effectivePosition = 0;
         
-        // Check optional arguments
-        for( int i = 1; i < argc; ++i ) {
-                if( _stricmp( argv[i], "--param" ) == 0 || _stricmp( argv[i], "-p" ) == 0 ) {
+    // Check optional arguments
+    for( int i = 1; i < argc; ++i ) {
+        if( _stricmp( argv[i], "--param" ) == 0 || _stricmp( argv[i], "-p" ) == 0 ) {
             paramList[ argv[ ++i ] ] = argv[ ++i ];
         }
         else {
-                        input = cleanPath( argv[i] );
+            input = cleanPath( argv[i] );
 
             if( input[0] == '/' || input[1] == ':' || input[0] == '\\' ) {
                 size_t index = input.find_last_of( "\\/" );
@@ -456,7 +456,7 @@ int main( int argc, char **argv )
             
             effectivePosition++;
         }            
-        } // end for arguments
+    } // end for arguments
 
 
     if( scriptPath.length() <= 0 ) {
@@ -467,11 +467,11 @@ int main( int argc, char **argv )
     // Push file list into a lua global
     lua_createtable( L, assetList.size(), 0 );
     
-        for( unsigned int i = 0; i < assetList.size(); ++i ) {
+    for( unsigned int i = 0; i < assetList.size(); ++i ) {
         lua_pushinteger( L, i + 1 );
         lua_pushstring( L, assetList[ i ].c_str() );
         lua_settable( L, -3 );
-        }
+    }
 
     lua_setglobal( L, "_FILES" );
 
@@ -482,7 +482,7 @@ int main( int argc, char **argv )
         lua_pushstring( L, param.first.c_str() );
         lua_pushstring( L, param.second.c_str() );
         lua_settable( L, -3 );
-        }
+    }
 
     lua_setglobal( L, "_PARAMS" );
     
@@ -493,5 +493,5 @@ int main( int argc, char **argv )
     
     DestroyFbx();
     
-        return 0;
+    return 0;
 }

@@ -10,6 +10,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 
 #include "utils.h"
 
@@ -19,17 +20,21 @@ extern "C"
 #include <lauxlib.h>
 #include <lualib.h>
     
-#include <physfs.h>
-
     LUALIB_API int luaopen_yajl(lua_State *L);
     LUALIB_API int js_to_string(lua_State *L);
+    LUALIB_API int luaopen_lfs (lua_State *L);
 }
 
 //
 using namespace std;
+namespace fs = std::experimental::filesystem;
 
 const float MaxFloat = 3.402823466e+38F;
 bool _debuggingEnabled = false;
+
+const char *_progressChar = "....ooooOOOO0000OOOOoooo";
+const int _progressCharLength = 24;
+int _progressCount = 0;
 
 // EASTL integration
 // EASTL expects us to define these, see allocator.h line 194
@@ -185,6 +190,14 @@ static int _ProcessFile( lua_State *L )
         lua_pushstring( L, "missing or bad file name parameter" );
         lua_error( L );
         return 0;
+    }
+
+    {
+        char anim = _progressChar[_progressCount++ % _progressCharLength];
+        for(int i = 0; i < 30; ++i) {
+            std::cerr << "  " << anim;
+        }
+        std::cerr << "\r";
     }
     
     auto path = lua_tostring( L, 1 );
@@ -363,6 +376,7 @@ lua_State* CreateLuaState()
     lua_atpanic( L, LuaPanic );
     luaL_openlibs( L );
 
+    luaopen_lfs( L );
     luaopen_yajl( L );
     lua_setglobal( L, "json" );
 
@@ -379,6 +393,27 @@ lua_State* CreateLuaState()
     }
     
     return L;
+}
+
+int PushMatchingFiles(lua_State *L, int index, fs::path path, unsigned int count) {
+    // If this entry is a directory, get the recursive listing of all files
+    if(fs::is_directory(path) || (fs::is_symlink(path) && fs::is_directory(fs::read_symlink(path)))) {
+        for(auto &entry : fs::recursive_directory_iterator(path, fs::directory_options::follow_directory_symlink)) {
+            count = PushMatchingFiles(L, index, entry, count);
+        }
+    }
+    else {
+        auto ext = path.extension();
+        
+        if(ext == ".fbx" || ext == ".FBX") {
+            lua_pushinteger(L, count + 1);
+            lua_pushstring(L, path.string().c_str());
+            lua_settable(L, index);
+            count++;
+        }
+    }
+
+    return count;
 }
 
 //
@@ -438,6 +473,14 @@ int main( int argc, char **argv )
         if( _stricmp( argv[i], "--param" ) == 0 || _stricmp( argv[i], "-p" ) == 0 ) {
             paramList[ argv[ ++i ] ] = argv[ ++i ];
         }
+        // if( _stricmp( argv[i], "--dir" ) == 0 || _stricmp( argv[i], "-d" ) == 0 ) {
+        //     std::string dir = argv[++i];
+        //     auto mount = argv[i];
+            
+        //     if(!fs::exists(mount)) {
+        //         Log("Directory doesn't exist");
+        //     }
+        // }
         else {
             input = cleanPath( argv[i] );
 
@@ -458,19 +501,16 @@ int main( int argc, char **argv )
         }            
     } // end for arguments
 
-
     if( scriptPath.length() <= 0 ) {
         Log( "Error: No script specified" );
         exit( 1 );
     }
 
     // Push file list into a lua global
-    lua_createtable( L, assetList.size(), 0 );
+    lua_createtable( L, 0, 0 );
     
-    for( unsigned int i = 0; i < assetList.size(); ++i ) {
-        lua_pushinteger( L, i + 1 );
-        lua_pushstring( L, assetList[ i ].c_str() );
-        lua_settable( L, -3 );
+    for( unsigned int i = 0, count = 0; i < assetList.size(); ++i ) {
+        count = PushMatchingFiles(L, lua_gettop(L), assetList[i], count);
     }
 
     lua_setglobal( L, "_FILES" );

@@ -40,6 +40,7 @@ if _PARAMS.out then
    OutputLua(_textures, _PARAMS.out)
 
 else
+   print("\n");
    print(TableToString(_textures))
    
 end

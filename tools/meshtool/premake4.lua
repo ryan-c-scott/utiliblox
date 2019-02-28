@@ -37,6 +37,7 @@ files
    "../lua.natvis",
    "../../dependencies/EASTL/doc/EASTL.natvis",
    "../../dependencies/lua-yajl/lua_yajl.c",
+   '../../dependencies/luafilesystem/src/lfs.c',
 }
 
 links
